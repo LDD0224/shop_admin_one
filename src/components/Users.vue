@@ -32,12 +32,12 @@
       <el-table-column prop="mg_state" label="用户状态">
         <!-- 在自定义列模版中，如何访问到当前列的数据 -->
         <template slot-scope="scope">
-          <el-switch v-model="scope.row.mg_state" active-color="#13ce66" inactive-color="#ff4949"></el-switch>
+          <el-switch @change="changeState(scope.row)" v-model="scope.row.mg_state" active-color="#13ce66" inactive-color="#ff4949"></el-switch>
         </template>
       </el-table-column>
       <el-table-column label="操作">
         <template slot-scope="scope">
-          <el-button type="primary" icon="el-icon-edit" plain size="mini"></el-button>
+          <el-button type="primary" icon="el-icon-edit" plain size="mini" @click="showEditDialog(scope.row)"></el-button>
           <el-button type="danger" icon="el-icon-delete" @click="delUser(scope.row.id)" plain size="mini"></el-button>
           <el-button type="success" icon="el-icon-check" plain size="mini">分配角色</el-button>
         </template>
@@ -92,7 +92,7 @@
     </el-dialog>
     <!-- 修改表单 -->
     <el-dialog title="修改用户" :visible.sync="editDialogVisible" width="40%">
-      <el-form status-icon ref="editForm" :rules="rules" :model="addForm" label-width="80px">
+      <el-form status-icon ref="editForm" :rules="rules" :model="editForm" label-width="80px">
         <el-form-item label="用户名">
           <el-tag type="info">{{editForm.username}}</el-tag>
         </el-form-item>
@@ -134,11 +134,11 @@ export default {
       rules: {
         username: [
           { required: true, message: '用户名不能为空', trigger: 'blur' },
-          { min: 3, max: 9, message: '用户名长度在 3 到 9 个字符', trigger: 'blur' }
+          { min: 3, max: 9, message: '用户长度在 3 到 9 个字符', trigger: 'blur' }
         ],
         password: [
           { required: true, message: '密码不能为空', trigger: 'blur' },
-          { min: 6, max: 12, message: '密码长度在 6 到 12 个字符', trigger: 'blur' }
+          { min: 6, max: 12, message: '用户长度在 6 到 12 个字符', trigger: 'blur' }
         ],
         email: [
           { type: 'email', message: '请输入一个合法的邮箱', trigger: 'blur' }
@@ -186,6 +186,7 @@ export default {
       this.getUserList()
     },
     handleCurrentChange(val) {
+      // console.log(val)
       this.currentPage = val
       this.getUserList()
     },
@@ -195,6 +196,7 @@ export default {
       this.getUserList()
     },
     delUser(id) {
+      // console.log(id)
       this.$confirm('你确定要删除吗', '温馨提示', {
         type: 'wraning'
       })
@@ -212,12 +214,24 @@ export default {
               this.currentPage--
             }
             this.getUserList()
-            this.$message.success('删除成功了')
+            this.$message.success('成功删除了')
           }
         })
         .catch(() => {
-          this.$message.info('删除取消了')
+          this.$message.info('取消删除了')
         })
+    },
+    async changeState({ id, mg_state: mgState }) {
+      // console.log(user)
+      let res = await this.axios({
+        method: 'put',
+        url: `users/${id}/state/${mgState}`
+      })
+      if (res.meta.status === 200) {
+        this.$message.success('状态修改成功了')
+      } else {
+        this.$message.error('状态修改失败了')
+      }
     },
     // 显示添加对话框
     showAddDialog() {
