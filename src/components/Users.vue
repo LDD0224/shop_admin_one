@@ -196,7 +196,7 @@ export default {
     },
     // 显示添加对话框
     showAddDialog() {
-      this.showAddDialog = true
+      this.addDialogVisible = true
     },
     addUser() {
       // 1. 表单校验功能
