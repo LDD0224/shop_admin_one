@@ -46,6 +46,21 @@
         </template>
       </el-table-column>
     </el-table>
+    <!-- 分配角色对话框 -->
+    <el-dialog title="角色授权" :visible.sync="assignDialogVisible" width="40%">
+      <!-- 树形菜单 -->
+      <!--
+        :data: 树形菜单的数据
+        props：用于指定显示的属性以及设置子属性
+        show-checkbox：显示checkbox
+        default-expand-all: 默认展开所有节点
+      -->
+      <el-tree ref="tree" :data="data" node-key="id" :props="defaultProps" show-checkbox default-expand-all></el-tree>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="assignDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="assignRight">分配</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -81,6 +96,45 @@ export default {
         this.$message.success('权限取消成功了')
       } else {
         this.$message.info('权限取消失败了')
+      }
+    },
+    async showAssignDialog(role) {
+      // 显示对话框
+      this.roleId = role.id
+      this.assignDialogVisible = true
+      // 发送ajax请求，获取到所有的权限的数据， 树状
+      let res = await this.axios.get('rights/tree')
+      let { meta: { status }, data } = res
+      if (status === 200) {
+        this.data = data
+        // console.log(this.data)
+      }
+      // 让节点选中
+      // 找到当前角色有拥有的所有的三级权限
+      let ids = []
+      role.children.forEach(l1 => {
+        l1.children.forEach(l2 => {
+          l2.children.forEach(l3 => {
+            ids.push(l3.id)
+          })
+        })
+      })
+      this.$refs.tree.setCheckedKeys(ids)
+    },
+    async assignRight() {
+      // 获取到所有选中的id
+      let checkedKeys = this.$refs.tree.getCheckedKeys()
+      let halfCheckedKeys = this.$refs.tree.getHalfCheckedKeys()
+      let rids = checkedKeys.concat(halfCheckedKeys).join()
+      // 发送ajax请求
+      let res = await this.axios.post(`roles/${this.roleId}/rights`, { rids })
+      let { meta: { status } } = res
+      if (status === 200) {
+        this.getRoleList()
+        this.assignDialogVisible = false
+        this.$message.success('权限分配成功了')
+      } else {
+        this.$message.error('权限分配失败了')
       }
     }
   },
