@@ -75,23 +75,24 @@
 export default {
   // 提供退出功能logout方法
   methods: {
-    logout() {
+    async logout() {
       // 1. 点击退出按钮, 弹出一个确认框
       // this.$confirm 显示弹窗
-      this.$confirm('你确定要退出系统吗?', '温馨提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
+      try {
+        await this.$confirm('你确定要退出系统吗?', '温馨提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
         // 2. 点击确定, 删除localStorage中的myToken
         localStorage.removeItem('token')
         // 3. 跳转到登录组件
         this.$router.push('login')
         // 4. 给一个退出的提示
         this.$message.success('退出成功了')
-      }).catch(() => {
+      } catch (e) {
         this.$message.info('退出取消了')
-      })
+      }
     }
   }
 }

@@ -157,11 +157,11 @@ export default {
     }
   },
   methods: {
-    getUserList() {
+    async getUserList() {
       // axios如果是get/delete请求，参数要么直接拼地址栏，要么放到params中
       // 如果post/put/patch请求，参数放到data中
       // 除了login请求，其他所有的接口都必须携带token， 要求设置给请求头：Authorization
-      this.axios({
+      let res = await this.axios({
         method: 'get',
         url: 'users',
         params: {
@@ -169,16 +169,15 @@ export default {
           pagenum: this.currentPage,
           pagesize: this.pageSize
         }
-      }).then(res => {
-        let {
-          meta: { status },
-          data: { users, total }
-        } = res
-        if (status === 200) {
-          this.userList = users
-          this.total = total
-        }
       })
+      let {
+        meta: { status },
+        data: { users, total }
+      } = res
+      if (status === 200) {
+        this.userList = users
+        this.total = total
+      }
     },
     handleSizeChange(val) {
       // 修改this.pageSize
@@ -195,31 +194,28 @@ export default {
       this.currentPage = 1
       this.getUserList()
     },
-    delUser(id) {
+    async delUser(id) {
       // console.log(id)
-      this.$confirm('你确定要删除吗', '温馨提示', {
-        type: 'wraning'
-      })
-        .then(() => {
-          // 发送ajax请求，删除数据
-          return this.axios({
-            method: 'delete',
-            url: `users/${id}`
-          })
+      try {
+        await this.$confirm('你确定要删除吗', '温馨提示', {
+          type: 'wraning'
         })
-        .then(res => {
-          if (res.meta.status === 200) {
-            // 如果我们发现当前页只有一条数据了，应该current减1，渲染上一页
-            if (this.userList.length <= 1 && this.currentPage > 1) {
-              this.currentPage--
-            }
-            this.getUserList()
-            this.$message.success('成功删除了')
+        // 发送ajax请求，删除数据
+        let res = await this.axios({
+          method: 'delete',
+          url: `users/${id}`
+        })
+        if (res.meta.status === 200) {
+          // 如果我们发现当前页只有一条数据了，应该current减1，渲染上一页
+          if (this.userList.length <= 1 && this.currentPage > 1) {
+            this.currentPage--
           }
-        })
-        .catch(() => {
-          this.$message.info('取消删除了')
-        })
+          this.getUserList()
+          this.$message.success('成功删除了')
+        }
+      } catch (e) {
+        this.$message.info('取消删除了')
+      }
     },
     async changeState({ id, mg_state: mgState }) {
       // console.log(user)
@@ -239,30 +235,29 @@ export default {
     },
     addUser() {
       // 1. 表单校验功能
-      this.$refs.addForm.validate(valid => {
+      this.$refs.addForm.validate(async valid => {
         if (!valid) return false
         // 2. 发送ajax请求添加数据
-        this.axios({
+        let res = await this.axios({
           method: 'post',
           url: 'users',
           data: this.addForm
-        }).then(res => {
-          let { meta: { status, msg } } = res
-          if (status === 201) {
-            this.total++
-            this.currentPage = Math.ceil(this.total / this.pageSize)
-            // 3. 重新渲染
-            this.getUserList()
-            // 4. 重置表单样式
-            this.$refs.addForm.resetFields()
-            // 5. 隐藏模态框
-            this.addDialogVisible = false
-            // 6. 提示信息
-            this.$message.success('添加成功了')
-          } else {
-            this.$message.error(msg)
-          }
         })
+        let { meta: { status, msg } } = res
+        if (status === 201) {
+          this.total++
+          this.currentPage = Math.ceil(this.total / this.pageSize)
+          // 3. 重新渲染
+          this.getUserList()
+          // 4. 重置表单样式
+          this.$refs.addForm.resetFields()
+          // 5. 隐藏模态框
+          this.addDialogVisible = false
+          // 6. 提示信息
+          this.$message.success('添加成功了')
+        } else {
+          this.$message.error(msg)
+        }
       })
     },
     showEditDialog(row) {
@@ -275,28 +270,27 @@ export default {
     },
     updateUser() {
       // 1. 表单校验功能
-      this.$refs.editForm.validate(valid => {
+      this.$refs.editForm.validate(async valid => {
         if (!valid) return false
         // 2. 发送ajax请求添加数据
-        this.axios({
+        let res = await this.axios({
           method: 'put',
           url: `users/${this.editForm.id}`,
           data: this.editForm
-        }).then(res => {
-          let { meta: { status } } = res
-          if (status === 200) {
-            // 3. 重新渲染
-            this.getUserList()
-            // 4. 重置表单样式
-            this.$refs.editForm.resetFields()
-            // 5. 隐藏模态框
-            this.editDialogVisible = false
-            // 6. 提示信息
-            this.$message.success('修改成功了')
-          } else {
-            this.$message.error('服务器异常')
-          }
         })
+        let { meta: { status } } = res
+        if (status === 200) {
+          // 3. 重新渲染
+          this.getUserList()
+          // 4. 重置表单样式
+          this.$refs.editForm.resetFields()
+          // 5. 隐藏模态框
+          this.editDialogVisible = false
+          // 6. 提示信息
+          this.$message.success('修改成功了')
+        } else {
+          this.$message.error('服务器异常')
+        }
       })
     }
   },
@@ -307,12 +301,6 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.el-breadcrumb {
-  height: 50px;
-  line-height: 50px;
-  margin-bottom: 5px;
-  background-color: #d3d4dd;
-}
 .input-with-select {
   width: 300px;
   margin-bottom: 5px;
