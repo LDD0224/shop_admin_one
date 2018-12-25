@@ -5,6 +5,8 @@ import Login from '@/components/Login'
 import Home from '@/components/Home'
 // 导入Users组件
 import Users from '@/components/Users'
+// 导入Rights组件
+import Rights from '@/components/Rights'
 
 Vue.use(Router)
 
@@ -26,6 +28,10 @@ const router = new Router({
         {
           path: '/users',
           component: Users
+        },
+        {
+          path: '/rights',
+          component: Rights
         }
       ]
     }
