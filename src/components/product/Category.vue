@@ -43,6 +43,22 @@
       :total="total"
       background
     ></el-pagination>
+    <!-- 添加表单 -->
+    <el-dialog title="添加分类" :visible.sync="addDialogVisible" width="40%">
+      <el-form ref="addForm" :model="addForm" label-width="80px" :rules="rules" status-icon>
+        <el-form-item label="分类名称" prop="cat_name">
+          <el-input v-model="addForm.cat_name" placeholder="请输入分类名称"></el-input>
+        </el-form-item>
+        <!-- cat_pid必须是一个数组 -->
+        <el-form-item label="父级名称" prop="cat_pid">
+          <el-cascader :options="options" v-model="addForm.cat_pid" change-on-select clearable :props="props"></el-cascader>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="addDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="addCategory">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -93,14 +109,6 @@ export default {
         // console.log(this.categoryList)
       }
     },
-    async showAddDialog() {
-      this.addDialogVisible = true
-      // 加载商品的分类数据（2级）
-      let res = await this.axios.get('categories?type=2')
-      if (res.meta.status === 200) {
-        this.options = res.data
-      }
-    },
     // 修改了每页的条数
     handleSizeChange(val) {
       this.pageSize = val
@@ -111,6 +119,34 @@ export default {
     handleCurrentChange(val) {
       this.currentPage = val
       this.getCategoryList()
+    },
+    async showAddDialog() {
+      this.addDialogVisible = true
+      // 加载商品的分类数据（2级）
+      let res = await this.axios.get('categories?type=2')
+      if (res.meta.status === 200) {
+        this.options = res.data
+      }
+    },
+    addCategory() {
+      this.$refs.addForm.validate(async valid => {
+        if (!valid) return false
+        // 发送ajax请求  cat_name  cat_pid  cat_level
+        let { cat_pid: catPid, cat_name: catName } = this.addForm
+        let res = await this.axios.post('categories', {
+          cat_pid: catPid[catPid.length - 1] || 0,
+          cat_name: catName,
+          cat_level: catPid.length
+        })
+        if (res.meta.status === 201) {
+          this.$refs.addForm.resetFields()
+          this.addDialogVisible = false
+          this.getCategoryList()
+          this.$message.success('添加成功了')
+        } else {
+          this.$message.error('添加失败了')
+        }
+      })
     }
   },
   created() {
