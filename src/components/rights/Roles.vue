@@ -6,6 +6,8 @@
       <el-breadcrumb-item>权限管理</el-breadcrumb-item>
       <el-breadcrumb-item>角色列表</el-breadcrumb-item>
     </el-breadcrumb>
+    <!-- 增加按钮 -->
+    <el-button type="success" plain @click="showAddDialog">增加角色</el-button>
     <!-- 表格组件 -->
     <el-table :data="roleList">
       <el-table-column type="expand">
@@ -40,9 +42,9 @@
       <el-table-column label="角色描述" prop="roleDesc"></el-table-column>
       <el-table-column label="操作">
         <template slot-scope="{row}">
-          <el-button type="primary" plain icon="el-icon-edit" size="mini"></el-button>
+          <el-button type="primary" plain icon="el-icon-edit" size="mini" @click="showEditDialog(row)"></el-button>
           <el-button type="danger" plain icon="el-icon-delete" size="mini"></el-button>
-          <el-button type="success" plain icon="el-icon-check" @click="showAssignDialog(row)" size="mini">分配权限</el-button>
+          <el-button type="success" plain icon="el-icon-check" size="mini" @click="showAssignDialog(row)">分配权限</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -61,6 +63,21 @@
         <el-button type="primary" @click="assignRight">分配</el-button>
       </span>
     </el-dialog>
+    <!-- 添加和修改对话框 -->
+    <el-dialog :title="this.addForm.id ? '修改角色' : '添加角色'" :visible.sync="addDialogVisible" width="40%">
+      <el-form status-icon ref="addForm" :rules="rules" :model="addForm" label-width="80px">
+        <el-form-item label="角色名称" prop="roleName">
+          <el-input v-model="addForm.roleName" placeholder="请输入角色名称"></el-input>
+        </el-form-item>
+        <el-form-item label="角色描述" prop="roleDesc">
+          <el-input v-model="addForm.roleDesc" placeholder="请输入角色描述"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="addDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveRole">确定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -75,7 +92,21 @@ export default {
         children: 'children',
         label: 'authName'
       },
-      roleId: ''
+      roleId: '',
+      addDialogVisible: false,
+      addForm: {
+        id: '',
+        roleName: '',
+        roleDesc: ''
+      },
+      rules: {
+        roleName: [
+          { required: true, message: '请输入角色名称', trigger: 'blur' }
+        ],
+        roleDesc: [
+          { required: true, message: '请输入角色描述', trigger: 'blur' }
+        ]
+      }
     }
   },
   methods: {
@@ -99,18 +130,20 @@ export default {
       }
     },
     async showAssignDialog(role) {
-      // 显示对话框
+      // 0. 存储了需要分配的角色id
       this.roleId = role.id
+      // 1. 显示对话框
       this.assignDialogVisible = true
-      // 发送ajax请求，获取到所有的权限的数据， 树状
+      // 2. 发送ajax请求，获取到所有的权限的数据， 树状
       let res = await this.axios.get('rights/tree')
       let { meta: { status }, data } = res
       if (status === 200) {
         this.data = data
         // console.log(this.data)
       }
-      // 让节点选中
-      // 找到当前角色有拥有的所有的三级权限
+      // 3. 使用树形菜单把数据显示出来
+      // 4. 默认选中， 如何让节点默认选中
+      // 4.1 找到当前角色有拥有的所有的三级权限
       let ids = []
       role.children.forEach(l1 => {
         l1.children.forEach(l2 => {
@@ -136,6 +169,42 @@ export default {
       } else {
         this.$message.error('权限分配失败了')
       }
+    },
+    showAddDialog() {
+      this.addDialogVisible = true
+      this.addForm.roleName = ''
+      this.addForm.roleDesc = ''
+      this.addForm.id = ''
+    },
+    saveRole() {
+      // 1. 表单校验
+      this.$refs.addForm.validate(async valid => {
+        if (!valid) return false
+        // 2.发送ajax请求
+        let id = this.addForm.id
+        let method = id ? 'put' : 'post'
+        let url = id ? `roles/${id}` : `roles`
+        let status = id ? 200 : 201
+        let res = await this.axios({
+          method,
+          url,
+          data: this.addForm
+        })
+        if (res.meta.status === status) {
+          this.$refs.addForm.resetFields()
+          this.addDialogVisible = false
+          this.getRoleList()
+          this.$message.success('操作成功')
+        } else {
+          this.$message.error('操作失败')
+        }
+      })
+    },
+    showEditDialog(role) {
+      this.addDialogVisible = true
+      this.addForm.roleName = role.roleName
+      this.addForm.roleDesc = role.roleDesc
+      this.addForm.id = role.id
     }
   },
   created() {
