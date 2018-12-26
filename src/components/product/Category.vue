@@ -144,9 +144,25 @@ export default {
           this.getCategoryList()
           this.$message.success('添加成功了')
         } else {
-          this.$message.error('添加失败了')
+          this.$message.info('添加取消了')
         }
       })
+    },
+    // 删除商品分类
+    async delCategory(row) {
+      try {
+        await this.$confirm('你确定要删除吗', '温馨提示', {
+          type: 'warning'
+        })
+        // 发送ajax请求，删除数据
+        let res = await this.axios.delete(`categories/${row.cat_id}`)
+        if (res.meta.status === 200) {
+          this.getCategoryList()
+          this.$message.success('删除成功了')
+        }
+      } catch (e) {
+        this.$message.info('删除取消了')
+      }
     }
   },
   created() {
