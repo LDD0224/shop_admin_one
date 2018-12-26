@@ -23,6 +23,26 @@
         </template>
       </el-table-column>
     </el-table>
+    <!-- 分页 -->
+    <!--
+      @size-change: 表示每页的条数发生了改变，会触发handleSizeChange
+      @current-change: 当前页发生改变
+      current-page: 指定当前页面
+      page-sizes: 指定选择每页条数的数组
+      page-size: 每页的条数
+      total:指定总条数
+      layout: 指定分页的空间
+    -->
+    <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :current-page="currentPage"
+      :page-sizes="[10, 20, 30, 40]"
+      :page-size="pageSize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="total"
+      background
+    ></el-pagination>
   </div>
 </template>
 
@@ -80,6 +100,17 @@ export default {
       if (res.meta.status === 200) {
         this.options = res.data
       }
+    },
+    // 修改了每页的条数
+    handleSizeChange(val) {
+      this.pageSize = val
+      this.currentPage = 1
+      this.getCategoryList()
+    },
+    // 修改了当前页的页码
+    handleCurrentChange(val) {
+      this.currentPage = val
+      this.getCategoryList()
     }
   },
   created() {
