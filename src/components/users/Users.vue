@@ -38,8 +38,8 @@
       <el-table-column label="操作">
         <template slot-scope="scope">
           <el-button type="primary" icon="el-icon-edit" plain size="mini" @click="showEditDialog(scope.row)"></el-button>
-          <el-button type="danger" icon="el-icon-delete" @click="delUser(scope.row.id)" plain size="mini"></el-button>
-          <el-button type="success" icon="el-icon-check" plain size="mini">分配角色</el-button>
+          <el-button type="danger" icon="el-icon-delete" plain size="mini" @click="delUser(scope.row.id)"></el-button>
+          <el-button type="success" icon="el-icon-check" plain size="mini" @click="showAssignDialog(scope.row)">分配角色</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -108,6 +108,29 @@
         <el-button type="primary" @click="updateUser">确定</el-button>
       </span>
     </el-dialog>
+    <!-- 分配表单 -->
+    <el-dialog title="分配角色" :visible.sync="assignDialogVisible" width="40%">
+       <el-form ref="assignForm" :model="assignForm" label-width="80px" :rules="rules" status-icon>
+        <el-form-item label="用户名">
+          <el-tag type="info">{{assignForm.username}}</el-tag>
+        </el-form-item>
+        <el-form-item label="角色列表">
+            <el-select v-model="assignForm.rid" placeholder="请选择">
+              <!-- options:需要是角色的列表  -->
+              <el-option
+                v-for="item in roleList"
+                :key="item.id"
+                :label="item.roleName"
+                :value="item.id">
+              </el-option>
+            </el-select>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="assignDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="assignRole">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -153,7 +176,14 @@ export default {
         username: '',
         email: '',
         mobile: ''
-      }
+      },
+      assignDialogVisible: false,
+      assignForm: {
+        id: '',
+        username: '',
+        rid: ''
+      },
+      roleList: []
     }
   },
   methods: {
@@ -292,9 +322,53 @@ export default {
           this.$message.error('服务器异常')
         }
       })
+    },
+    async getUserInfo(id) {
+      let res = await this.axios.get(`users/${id}`)
+      if (res.meta.status === 200) {
+        let rid = res.data.rid
+        if (rid === -1) {
+          rid = ''
+        }
+        this.assignForm.rid = rid
+      }
+    },
+    async showAssignDialog(user) {
+      // 1.显示分配角色的对话框
+      this.assignDialogVisible = true
+      // 2. 数据回显
+      this.assignForm.id = user.id
+      this.assignForm.username = user.username
+      // 发送ajax，根据用户id查询角色id
+      this.getUserList(user.id)
+      // 3. 获取角色列表
+      let res = await this.axios.get('roles')
+      if (res.meta.status === 200) {
+        this.roleList = res.data
+      }
+    },
+    async assignRole() {
+      // 1. 表单校验
+      if (!this.assignForm.rid) {
+        this.$message.error('请选择一个角色')
+        return
+      }
+      let res = await this.axios.put(`users/${this.assignForm.id}/role`, {
+        rid: this.assignForm.rid
+      })
+      if (res.meta.status === 200) {
+        this.$refs.assignForm.resetFields()
+        this.assignDialogVisible = false
+        this.getUserList()
+        this.$message.success('分配成功了')
+      } else {
+        this.$message.success('分配失败了')
+      }
     }
   },
   created() {
+    // $router: 整个路由对象  跳转路由
+    // $route:  当前的路由   当前路由中的路由  参数
     this.getUserList()
   }
 }
