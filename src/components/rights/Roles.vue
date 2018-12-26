@@ -43,7 +43,7 @@
       <el-table-column label="操作">
         <template slot-scope="{row}">
           <el-button type="primary" plain icon="el-icon-edit" size="mini" @click="showEditDialog(row)"></el-button>
-          <el-button type="danger" plain icon="el-icon-delete" size="mini"></el-button>
+          <el-button type="danger" plain icon="el-icon-delete" size="mini" @click="delRole(row.id)"></el-button>
           <el-button type="success" plain icon="el-icon-check" size="mini" @click="showAssignDialog(row)">分配权限</el-button>
         </template>
       </el-table-column>
@@ -205,6 +205,22 @@ export default {
       this.addForm.roleName = role.roleName
       this.addForm.roleDesc = role.roleDesc
       this.addForm.id = role.id
+    },
+    async delRole(id) {
+      try {
+        await this.$confirm('你确定要删除该角色吗?', '温馨提示', {
+          type: 'warning'
+        })
+        // 发送ajax请求
+        let res = await this.axios.delete(`roles/${id}`)
+        if (res.meta.status === 200) {
+          // 删除成功
+          this.getRoleList()
+          this.$message.success('删除成功了')
+        }
+      } catch (e) {
+        this.$message.info('删除取消了')
+      }
     }
   },
   created() {
