@@ -10,6 +10,8 @@ import Users from '@/components/users/Users'
 import Rights from '@/components/rights/Rights'
 // 导入Roles组件
 import Roles from '@/components/rights/Roles'
+// 导入Category组件
+import Category from '@/components/product/Category'
 
 Vue.use(Router)
 
@@ -39,6 +41,10 @@ const router = new Router({
         {
           path: '/roles',
           component: Roles
+        },
+        {
+          path: '/categories',
+          component: Category
         }
       ]
     }
